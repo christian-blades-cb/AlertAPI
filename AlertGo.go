@@ -4,11 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-	//"reflect"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"log"
+	"net/http"
 )
 
 func main() {
@@ -86,9 +85,6 @@ func GetSystems(db *sql.DB) []string {
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
-	if err != nil {
-		panic(err.Error())
-	}
 	results := GetResults(rows)
 	defer rows.Close()
 	return results
@@ -111,7 +107,7 @@ func GetResults(rows *sql.Rows) []string {
 	for rows.Next() {
 		err := rows.Scan(&result)
 		if err != nil {
-			//fmt.Println(err)
+			fmt.Println(err)
 		}
 		results = append(results, result)
 	}
@@ -120,7 +116,6 @@ func GetResults(rows *sql.Rows) []string {
 func GetResultsTwo(rows *sql.Rows) [][]string {
 	var (
 		results [][]string
-		//result  [][]string
 		id      string
 		types   string
 		title   string
@@ -132,7 +127,7 @@ func GetResultsTwo(rows *sql.Rows) [][]string {
 	for rows.Next() {
 		err := rows.Scan(&id, &types, &title, &message)
 		if err != nil {
-			//fmt.Println(err)
+			fmt.Println(err)
 		}
 		messages := []string{id, types, title, message}
 		fmt.Println(messages)
