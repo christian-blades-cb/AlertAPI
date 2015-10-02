@@ -32,6 +32,7 @@ func main() {
 	router.HandleFunc("/alert/{id}", DeleteAlert).Methods("DELETE")
 	router.HandleFunc("/alert/{id}", PutAlert).Methods("PUT")
 	router.HandleFunc("/alerts/{system}", GetAlerts)
+	router.HandleFunc("/alerts", DeleteAlerts).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -77,6 +78,21 @@ func DeleteAlert(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	_, err := db.Exec("DELETE FROM messages WHERE id=?", id)
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+func DeleteAlerts(w http.ResponseWriter, r *http.Request) {
+	db := StartDatabase()
+	defer db.Close()
+
+	_, err := db.Exec("DELETE FROM messages")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	_, err = db.Exec("ALTER TABLE messages AUTO_INCREMENT=1")
 	if err != nil {
 		panic(err.Error())
 	}
