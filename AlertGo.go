@@ -17,6 +17,8 @@ type Message struct {
 	Type    string `json:"type"`
 	Title   string `json:"title"`
 	Message string `json:"message"`
+	Version string `json:"version"`
+	Server  string `json:"server"`
 }
 
 type MessagesJSON struct {
@@ -59,12 +61,14 @@ func PostAlert(w http.ResponseWriter, r *http.Request) {
 		Type:    r.FormValue("type"),
 		Title:   r.FormValue("title"),
 		Message: r.FormValue("message"),
+		Version: r.FormValue("version"),
+		Server:  r.FormValue("server"),
 	}
 
 	db := StartDatabase()
 	defer db.Close()
 
-	_, err := db.Exec("INSERT INTO messages (system, type, title, message) VALUES (?, ?, ?, ?)", m.System, m.Type, m.Title, m.Message)
+	_, err := db.Exec("INSERT INTO messages (system, type, title, message, version, server) VALUES (?, ?, ?, ?, ?, ?)", m.System, m.Type, m.Title, m.Message, m.Version, m.Server)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -108,12 +112,14 @@ func PutAlert(w http.ResponseWriter, r *http.Request) {
 		Type:    r.FormValue("type"),
 		Title:   r.FormValue("title"),
 		Message: r.FormValue("message"),
+		Version: r.FormValue("version"),
+		Server:  r.FormValue("server"),
 	}
 
 	db := StartDatabase()
 	defer db.Close()
 
-	_, err := db.Exec("UPDATE messages SET system=?, type=?, title=?, message=? WHERE id=?", m.System, m.Type, m.Title, m.Message, m.Id)
+	_, err := db.Exec("UPDATE messages SET system=?, type=?, title=?, message=?, version=?, server=? WHERE id=?", m.System, m.Type, m.Title, m.Message, m.Version, m.Server, m.Id)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -128,8 +134,8 @@ func GetAlerts(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	sql := `SELECT messages.id, messages.system, messages.type, messages.title, messages.message
-FROM messages
+	sql := `SELECT m.id, m.system, m.type, m.title, m.message, m.version, m.server
+FROM messages AS m
 	JOIN (
 		SELECT pkSite AS id, strAdresse AS system, strVersion AS version, strNom AS server1, strIP AS server2
 		FROM site
@@ -142,15 +148,15 @@ FROM messages
 		WHERE
 		    strAdresse=?
 	) AS site
-		ON (messages.system='all' OR messages.system=site.system)
-			AND (messages.version='' OR messages.version=site.version)
-			AND (messages.server='' OR messages.server=site.server1 OR messages.server=site.server2)
-GROUP BY messages.id
-ORDER BY id`
+		ON (m.system='all' OR m.system=site.system)
+			AND (m.version='' OR m.version=site.version)
+			AND (m.server='' OR m.server=site.server1 OR m.server=site.server2)
+GROUP BY m.id
+ORDER BY m.id`
 	rows, err := db.Query(sql, system)
 	for rows.Next() {
 		var m Message
-		err := rows.Scan(&m.Id, &m.System, &m.Type, &m.Title, &m.Message)
+		err := rows.Scan(&m.Id, &m.System, &m.Type, &m.Title, &m.Message, &m.Version, &m.Server)
 		if err != nil {
 			panic(err.Error())
 		}
