@@ -10,6 +10,20 @@ import (
 	"net/http"
 )
 
+type Message struct {
+	Id      int    `json:"id"`
+	System  string `json:"system"`
+	Type    string `json:"type"`
+	Title   string `json:"title"`
+	Message string `json:"message"`
+}
+
+type MessagesJSON struct {
+	Messages []Message `json:"notifications"`
+}
+
+var messages []Message
+
 func main() {
 	StartDatabase()
 	router := mux.NewRouter().StrictSlash(true)
