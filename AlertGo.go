@@ -28,6 +28,7 @@ func main() {
 	router.HandleFunc("/", Index)
 	router.HandleFunc("/system", SystemIndex)
 	router.HandleFunc("/alert", PostAlert).Methods("POST")
+	router.HandleFunc("/alert/{id}", DeleteAlert).Methods("DELETE")
 	router.HandleFunc("/alerts/{system}", GetAlerts)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -61,6 +62,19 @@ func PostAlert(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	_, err := db.Exec("INSERT INTO messages (system, type, title, message) VALUES (?, ?, ?, ?)", m.System, m.Type, m.Title, m.Message)
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+func DeleteAlert(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	db := StartDatabase()
+	defer db.Close()
+
+	_, err := db.Exec("DELETE FROM messages WHERE id=?", id)
 	if err != nil {
 		panic(err.Error())
 	}
