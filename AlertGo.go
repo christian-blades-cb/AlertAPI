@@ -95,7 +95,7 @@ func GetSystems(db *sql.DB) []string {
 }
 
 func StartDatabase() *sql.DB {
-	db, err := sql.Open("mysql", "root:@/Cow")
+	db, err := sql.Open("mysql", "luceo:luceo_password@(cb1-luceo.dev:3306)/ate")
 	if err != nil {
 		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 	}
