@@ -27,7 +27,7 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", Index)
 	router.HandleFunc("/system", SystemIndex)
-	router.HandleFunc("/message", SaveMessage).Methods("POST")
+	router.HandleFunc("/alert", PostAlert).Methods("POST")
 	router.HandleFunc("/alerts/{system}", GetAlerts)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -49,22 +49,21 @@ func SystemIndex(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 }
 
-func SaveMessage(w http.ResponseWriter, r *http.Request) {
-	db := StartDatabase()
-	//validate that the message and place are there
-	message := r.FormValue("message")
-	system := r.FormValue("system")
-	typearo := r.FormValue("type")
-	title := r.FormValue("title")
+func PostAlert(w http.ResponseWriter, r *http.Request) {
+	m := &Message{
+		System:  r.FormValue("system"),
+		Type:    r.FormValue("type"),
+		Title:   r.FormValue("title"),
+		Message: r.FormValue("message"),
+	}
 
-	fmt.Print(w, message+system+typearo+title)
-	//create a new entry into database
-	_, err := db.Exec("INSERT INTO messages(title,message,system,type) VALUES(?,?,?,?)", title, message, system, typearo)
+	db := StartDatabase()
+	defer db.Close()
+
+	_, err := db.Exec("INSERT INTO messages (system, type, title, message) VALUES (?, ?, ?, ?)", m.System, m.Type, m.Title, m.Message)
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Fprintln(w, "sent")
-	defer db.Close()
 }
 
 func GetAlerts(w http.ResponseWriter, r *http.Request) {
