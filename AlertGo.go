@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-type Message struct {
+type Alert struct {
 	Id      int    `json:"id"`
 	System  string `json:"system"`
 	Type    string `json:"type"`
@@ -21,8 +21,8 @@ type Message struct {
 	Server  string `json:"server"`
 }
 
-type MessagesJSON struct {
-	Messages []Message `json:"notifications"`
+type AlertsJSON struct {
+	Alerts []Alert `json:"notifications"`
 }
 
 func main() {
@@ -56,7 +56,7 @@ func SystemIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func PostAlert(w http.ResponseWriter, r *http.Request) {
-	m := &Message{
+	a := &Alert{
 		System:  r.FormValue("system"),
 		Type:    r.FormValue("type"),
 		Title:   r.FormValue("title"),
@@ -68,7 +68,7 @@ func PostAlert(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	_, err := db.Exec("INSERT INTO messages (system, type, title, message, version, server) VALUES (?, ?, ?, ?, ?, ?)", m.System, m.Type, m.Title, m.Message, m.Version, m.Server)
+	_, err := db.Exec("INSERT INTO alerts (system, type, title, message, version, server) VALUES (?, ?, ?, ?, ?, ?)", a.System, a.Type, a.Title, a.Message, a.Version, a.Server)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -81,7 +81,7 @@ func DeleteAlert(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	_, err := db.Exec("DELETE FROM messages WHERE id=?", id)
+	_, err := db.Exec("DELETE FROM alerts WHERE id=?", id)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -91,12 +91,12 @@ func DeleteAlerts(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	_, err := db.Exec("DELETE FROM messages")
+	_, err := db.Exec("DELETE FROM alerts")
 	if err != nil {
 		panic(err.Error())
 	}
 
-	_, err = db.Exec("ALTER TABLE messages AUTO_INCREMENT=1")
+	_, err = db.Exec("ALTER TABLE alerts AUTO_INCREMENT=1")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -106,7 +106,7 @@ func PutAlert(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["id"])
 
-	m := &Message{
+	a := &Alert{
 		Id:      id,
 		System:  r.FormValue("system"),
 		Type:    r.FormValue("type"),
@@ -119,14 +119,14 @@ func PutAlert(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	_, err := db.Exec("UPDATE messages SET system=?, type=?, title=?, message=?, version=?, server=? WHERE id=?", m.System, m.Type, m.Title, m.Message, m.Version, m.Server, m.Id)
+	_, err := db.Exec("UPDATE alerts SET system=?, type=?, title=?, message=?, version=?, server=? WHERE id=?", a.System, a.Type, a.Title, a.Message, a.Version, a.Server, a.Id)
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
 func GetAlerts(w http.ResponseWriter, r *http.Request) {
-	var messages []Message
+	var alerts []Alert
 
 	vars := mux.Vars(r)
 	system := vars["system"]
@@ -134,8 +134,8 @@ func GetAlerts(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	sql := `SELECT m.id, m.system, m.type, m.title, m.message, m.version, m.server
-FROM messages AS m
+	sql := `SELECT a.id, a.system, a.type, a.title, a.message, a.version, a.server
+FROM alerts AS a
 	JOIN (
 		SELECT pkSite AS id, strAdresse AS system, strVersion AS version, strNom AS server1, strIP AS server2
 		FROM site
@@ -148,22 +148,22 @@ FROM messages AS m
 		WHERE
 		    strAdresse=?
 	) AS site
-		ON (m.system='all' OR m.system=site.system)
-			AND (m.version='' OR m.version=site.version)
-			AND (m.server='' OR m.server=site.server1 OR m.server=site.server2)
-GROUP BY m.id
-ORDER BY m.id`
+		ON (a.system='all' OR a.system=site.system)
+			AND (a.version='' OR a.version=site.version)
+			AND (a.server='' OR a.server=site.server1 OR a.server=site.server2)
+GROUP BY a.id
+ORDER BY a.id`
 	rows, err := db.Query(sql, system)
 	for rows.Next() {
-		var m Message
-		err := rows.Scan(&m.Id, &m.System, &m.Type, &m.Title, &m.Message, &m.Version, &m.Server)
+		var a Alert
+		err := rows.Scan(&a.Id, &a.System, &a.Type, &a.Title, &a.Message, &a.Version, &a.Server)
 		if err != nil {
 			panic(err.Error())
 		}
-		messages = append(messages, m)
+		alerts = append(alerts, a)
 	}
 
-	j, err := json.Marshal(MessagesJSON{Messages: messages})
+	j, err := json.Marshal(AlertsJSON{Alerts: alerts})
 	if err != nil {
 		fmt.Println("error:", err)
 	}
