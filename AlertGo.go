@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 type Message struct {
@@ -29,6 +30,7 @@ func main() {
 	router.HandleFunc("/system", SystemIndex)
 	router.HandleFunc("/alert", PostAlert).Methods("POST")
 	router.HandleFunc("/alert/{id}", DeleteAlert).Methods("DELETE")
+	router.HandleFunc("/alert/{id}", PutAlert).Methods("PUT")
 	router.HandleFunc("/alerts/{system}", GetAlerts)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -75,6 +77,27 @@ func DeleteAlert(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	_, err := db.Exec("DELETE FROM messages WHERE id=?", id)
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+func PutAlert(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, _ := strconv.Atoi(vars["id"])
+
+	m := &Message{
+		Id:      id,
+		System:  r.FormValue("system"),
+		Type:    r.FormValue("type"),
+		Title:   r.FormValue("title"),
+		Message: r.FormValue("message"),
+	}
+
+	db := StartDatabase()
+	defer db.Close()
+
+	_, err := db.Exec("UPDATE messages SET system=?, type=?, title=?, message=? WHERE id=?", m.System, m.Type, m.Title, m.Message, m.Id)
 	if err != nil {
 		panic(err.Error())
 	}
