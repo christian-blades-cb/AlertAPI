@@ -128,7 +128,26 @@ func GetAlerts(w http.ResponseWriter, r *http.Request) {
 	db := StartDatabase()
 	defer db.Close()
 
-	rows, err := db.Query("SELECT id, system, type, title, message FROM messages WHERE system='all' OR system=? ORDER BY id", system)
+	sql := `SELECT messages.id, messages.system, messages.type, messages.title, messages.message
+FROM messages
+	JOIN (
+		SELECT pkSite AS id, strAdresse AS system, strVersion AS version, strNom AS server1, strIP AS server2
+		FROM site
+			LEFT JOIN r_serveur AS server
+				ON fkServeurFichier=pkServeur
+        		    OR fkServeurBD=pkServeur
+		            OR fkServeurBatch=pkServeur
+        		    OR fkServeurMail=pkServeur
+
+		WHERE
+		    strAdresse=?
+	) AS site
+		ON (messages.system='all' OR messages.system=site.system)
+			AND (messages.version='' OR messages.version=site.version)
+			AND (messages.server='' OR messages.server=site.server1 OR messages.server=site.server2)
+GROUP BY messages.id
+ORDER BY id`
+	rows, err := db.Query(sql, system)
 	for rows.Next() {
 		var m Message
 		err := rows.Scan(&m.Id, &m.System, &m.Type, &m.Title, &m.Message)
