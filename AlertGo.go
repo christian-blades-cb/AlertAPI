@@ -141,12 +141,15 @@ FROM alerts AS a
 		FROM site
 			LEFT JOIN r_serveur AS server
 				ON fkServeurFichier=pkServeur
-        		    OR fkServeurBD=pkServeur
-		            OR fkServeurBatch=pkServeur
-        		    OR fkServeurMail=pkServeur
-
+					OR fkServeurBD=pkServeur
+					OR fkServeurBatch=pkServeur
+					OR fkServeurMail=pkServeur
 		WHERE
-		    strAdresse=?
+			strAdresse=?
+		UNION
+		SELECT 0 AS id, 'cb1-luceo.dev' AS system, '4.0' AS version, 'cb1-luceo.dev' AS server1, 'cb1-luceo.dev' AS server2
+		UNION
+		SELECT -1 AS id, 'demo-us-ocb1.cb1-luceo.dev' AS system, '4.0' AS version, 'cb1-luceo.dev' AS server1, 'demo-us-ocb1.cb1-luceo.dev' AS server2
 	) AS site
 		ON (a.system='all' OR a.system=site.system)
 			AND (a.version='' OR a.version=site.version)
