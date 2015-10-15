@@ -1,0 +1,25 @@
+[Unit]
+Description=AlertAPI
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+TimeoutStartSec=10 min
+User=core
+
+ExecStartPre=/usr/bin/env bash -c "etcdctl get /environments/%p > '/tmp/%p.env'"
+
+ExecStartPre=-/usr/bin/env docker stop "%p-%i"
+ExecStartPre=-/usr/bin/env docker rm "%p-%i"
+ExecStartPre=/usr/bin/env docker pull quay.io/cbone/alertapi
+
+ExecStart=/usr/bin/env docker run \
+  --name='%p-%i' \
+  --env-file="/tmp/%p.env" \ 
+  --label desoto.servicename=alertapi \
+  --label desoto.port=8080 \
+  --publish 8080 \ 
+  quay.io/cbone/alertapi
+
+ExecStop=-/usr/bin/env docker stop "%p-%i"

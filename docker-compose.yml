@@ -1,0 +1,7 @@
+alertapi:
+  image: quay.io/cbone/alertapi
+  env_file:
+    - ".coreos/alertapi-app.env.dist"
+  ports:
+    - "8080:8080"
+    
